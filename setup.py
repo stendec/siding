@@ -11,6 +11,9 @@ setup(
     url="https://github.com/stendec/siding",
     download_url="https://github.com/stendec/siding/tarball/0.1.0",
     packages=["siding"],
+
+    install_requires=['PySide>=1.0'],
+
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Environment :: MacOS X",

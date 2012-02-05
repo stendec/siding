@@ -1,0 +1,2 @@
+siding
+PySide>=1.0
