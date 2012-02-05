@@ -11,8 +11,17 @@ siding is available under the
 Installation
 ------------
 
-Since siding isn't done, I haven't bothered to package it yet. However, you
-can always grab the latest code off github.
+siding isn't finished yet, but you can still download it if you'd like. You
+can use pip:
+
+    pip install siding
+
+Or if you still like the old ways:
+
+    easy_install siding
+
+
+And, of course, you can always grab the latest code off github.
 
     git clone git://github.com/stendec/siding.git
 
