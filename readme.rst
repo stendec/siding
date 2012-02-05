@@ -47,27 +47,3 @@ running a single instance, profiles, styles, and plugins::
 
     # And run the application.
     app.exec_()
-
-
-Documentation
-=============
-
-Documentation is still being written.
-
-.. .. toctree::
-..     :maxdepth: 2
-..
-..     guides/index
-..     examples/index
-
-API
-===
-
-.. toctree::
-    :maxdepth: 2
-
-    api/plugins
-    api/profile
-    api/singleinstance
-    api/style
-    api/version
