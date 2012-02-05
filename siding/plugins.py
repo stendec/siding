@@ -69,18 +69,6 @@ class DependencyError(VersionError):
     """
     pass
 
-if Version(PySide.__version__) < '1.0.6':
-    # This is an annoying bug.
-    def issignal(signal):
-        """ Return True if signal is an instance of QtCore.Signal. """
-        return (signal.__class__.__name__ == 'Signal' and
-            hasattr(signal, 'emit') and hasattr(signal, 'connect') and
-            hasattr(signal, 'disconnect'))
-else:
-    def issignal(signal):
-        """ Return True if signal is an instance of QtCore.Signal. """
-        return isinstance(signal, Signal)
-
 ###############################################################################
 # Helper Functions
 ###############################################################################
@@ -116,6 +104,21 @@ def app_version():
 def isblacklisted(name):
     """ Return True if the given name is blacklisted, otherwise False. """
     return bool(profile.get('siding/plugins/blacklist/%s' % name))
+
+def issignal(signal):
+    """ Return True if signal is an instance of QtCore.Signal. """
+    return isinstance(signal, Signal)
+
+try:
+    if Version(PySide.__version__) < '1.0.6':
+        # This is an annoying bug.
+        def issignal(signal):
+            """ Return True if signal is an instance of QtCore.Signal. """
+            return (signal.__class__.__name__ == 'Signal' and
+                hasattr(signal, 'emit') and hasattr(signal, 'connect') and
+                hasattr(signal, 'disconnect'))
+except ValueError:
+    pass
 
 ###############################################################################
 # Plugin Interface
