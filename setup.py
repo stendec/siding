@@ -9,7 +9,7 @@ setup(
     author="Stendec",
     author_email="stendec365@gmail.com",
     url="https://github.com/stendec/siding",
-    download_url="https://github.com/stendec/siding/tarball/master/0.1.0",
+    download_url="https://github.com/stendec/siding/tarball/0.1.0",
     packages=["siding"],
     classifiers=[
         "Development Status :: 3 - Alpha",
