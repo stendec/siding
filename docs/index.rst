@@ -54,10 +54,10 @@ Documentation
 
 Documentation is still being written.
 
-.. .. toctree::
-..     :maxdepth: 2
-..
-..     guides/index
+ .. toctree::
+     :maxdepth: 2
+
+     guides/index
 ..     examples/index
 
 API
@@ -66,9 +66,8 @@ API
 .. toctree::
     :maxdepth: 2
 
+    api/addons
     api/path
-    api/plugins
     api/profile
     api/singleinstance
-    api/style
     api/version

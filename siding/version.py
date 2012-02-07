@@ -141,7 +141,7 @@ class Version(object):
     ##### String Conversion ###################################################
 
     def __repr__(self):
-        return '<Version(%s)>' % str(self)
+        return 'Version(%r)' % str(self)
 
     def __str__(self):
         out = '%d.%d.%d' % (self._major, self._minor, self._patch)

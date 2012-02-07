@@ -49,10 +49,10 @@ def action(text=None, icon=None, status_tip=None, tool_tip=None,
     Argument     Description
     ===========  ============
     text         The text to display for the action. By default, this is set to the function name after underscores have been converted to spaces and it has been capitalized.
-    icon         The icon, if any, to display for the action. See :func:`PySide.QtGui.QAction.icon`
-    status_tip   The status tip for the action. See :func:`PySide.QtGui.QAction.statusTip`
-    tool_tip     The tool tip for the action. See :func:`PySide.QtGui.QAction.toolTip`
-    whats_this   The 'What's This?' text for the action. See :func:`PySide.QtGui.QAction.whatsThis`
+    icon         The icon, if any, to display for the action. See :meth:`PySide.QtGui.QAction.icon() <PySide.QtGui.PySide.QtGui.QAction.icon>`
+    status_tip   The status tip for the action. See :meth:`PySide.QtGui.QAction.statusTip <PySide.QtGui.PySide.QtGui.QAction.statusTip>`
+    tool_tip     The tool tip for the action. See :meth:`PySide.QtGui.QAction.toolTip  <PySide.QtGui.PySide.QtGui.QAction.toolTip>`
+    whats_this   The 'What's This?' text for the action. See :meth:`PySide.QtGui.QAction.whatsThis  <PySide.QtGui.PySide.QtGui.QAction.whatsThis>`
     default      If this is True, this action will be made the default and, if an add-on is double clicked, will be executed.
     checkable    Whether or not the action's state can be toggled.
     is_checked   A function that returns True if the action should be in a checked state.
@@ -217,9 +217,6 @@ class AddonInfo(object):
     information from file.
     """
 
-    version = Version('1')
-    """ The add-on's version. """
-
     CORE_VALUES = (('version', Version),)
     """
     A list of value keys that should be read from the Core section of the
@@ -231,6 +228,11 @@ class AddonInfo(object):
     that accepts a single value and returns something.
     """
 
+    version = Version('1')
+    file = None
+    path = None
+    path_source = None
+
     def __init__(self, name, filename=None):
         """
         Initialize the AddonInfo instance for an add-on with the provided name.
@@ -240,15 +242,13 @@ class AddonInfo(object):
 
         # Initialize some structures.
         self._ui = []
-
         self.data = {'name': name}
+
         self.requires = OrderedDict()
         self.needed_by = []
 
         # Now, store our information.
         self.name = name
-        self.path = None
-        self.file = None
 
         # Do we have a file? If so, make sure it exists, store the info, and
         # load it.

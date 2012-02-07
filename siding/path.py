@@ -83,6 +83,15 @@ def add_source(source, add_to_start=False):
     Add a new source to the path system. You can use this to add custom paths
     to the system, as well as ``pkg_resource`` packages and/or requirements.
 
+    If you provide a string for ``source``, it will first be checked for a
+    ``"py:`` prefix. If such a prefix exists, the string will be treated as a
+    package for ``pkg_resource``. Otherwise, the string will be checked with
+    :func:`os.path.exists` to determine if it's a valid location. If it *is*,
+    it will be processed with :func:`os.path.abspath` and used as a normal
+    folder. Otherwise, it will be assumed to be a package and we'll attempt to
+    find it. It's recommended to prefix your packages with ``"py:"`` to prevent
+    any chance of confusion.
+
     If ``add_to_start`` is True, the source will be added to the beginning of
     the list rather than the end.
 
@@ -217,7 +226,7 @@ def open(name, mode='rb', source=None):
     file will be created in the first source that has the directory that the
     file exists in. If no such source exists, IOError is raised.
 
-    .. note::
+    .. warning::
         Files returned by ``pkg_resources`` are always read as ``rb``,
         regardless of the specified mode. Additionally, attempting to open a
         file from ``pkg_resources`` for writing will cause a ValueError to be

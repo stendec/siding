@@ -69,13 +69,13 @@ def ensure_paths():
     global root_path
 
     # If we don't have root path, don't worry about it.
-    if not root_path:
-        root_path = path.root()
-        path.add_source(root_path)
 
     # If we don't have profile_path, make it.
     if not profile_path:
         if portable:
+            # Well, bah. Okay... *now* care about the root path.
+            if not root_path:
+                root_path = path.root()
             profile_path = root_path
         else:
             profile_path = path.appdata()
@@ -143,15 +143,16 @@ def initialize(args=None, **kwargs):
     =============  ============  ============
     portable       ``False``     If True, the profile system will create a profile path within the root folder, allowing the application to work as a portable app.
     profile        ``default``   The name of the profile to load.
-    sources        ``[]``        A list of additional sources for the path system to use.
-    profile_path                 Load the profile from this path.
-    root_path                    The application root directory. This is always the last path to be checked by the path system.
+    sources        ``[]``        A list of additional sources for the path system to use. These will be fed into :func:`siding.path.add_source`, along with any sources from the command line.
+    profile_path                 If this is set, load the profile from this path rather than building a path.
+    root_path                    The application root directory. This is always the last source to be used by the path system.
     =============  ============  ============
 
     .. warning::
         ``root_path`` will *probably* not work as expected after your
         application is frozen into an executable, so be sure to test that it's
-        working properly before distributing your application.
+        working properly before distributing your application if you're using
+        ``root_path``.
 
     In addition, you can provide a list of command line arguments to have
     siding load them automatically. Example::

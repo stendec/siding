@@ -25,12 +25,14 @@ has an easy-to-customize in-app update system.
 # Imports
 ###############################################################################
 
-from siding.addons.base import AddonInfo
+from siding.addons.base import action, AddonInfo
 
 ###############################################################################
 # Exports
 ###############################################################################
 
 __all__ = [
+    action,  # Decorators
+
     AddonInfo,  # Classes
 ]

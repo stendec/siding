@@ -5,5 +5,5 @@ Guides
     :maxdepth: 2
 
     plugins
-    profiles
-    styles
+..    profiles
+..    styles

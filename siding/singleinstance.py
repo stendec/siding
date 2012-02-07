@@ -94,28 +94,16 @@ class QSingleApplication(QApplication):
     variables of the QSingleApplication instance to the desired strings before
     using :attr:`already_running` or calling :func:`ensure_single` or
     :func:`send_message`.
-    
-    **Note**: ``app_id`` and ``session`` will undergo additional processing and
-    be converted to a UUID before being used. If you *really* wish to use your
-    own string, set it to ``_app_id``.
+
+    .. note::
+
+        ``app_id`` and ``session`` will undergo additional processing and be
+        converted into a :func:`UUID <uuid.uuid5>` before being utilized. If
+        you *really* wish to use your own string, set ``_app_id``.
     """
 
     messageReceived = Signal([dict], [list], [bool], [int], [long], [unicode], [float])
-    """
-    This signal is emitted whenever the application receives a message from
-    another instance. The message is encoded as JSON as it's sent, so this can
-    potentially be any basic type. Example::
-    
-        @app.messageReceived.connect
-        def handle_message(args):
-            print 'We just got:', args
-    """
-    
     compositionChanged = Signal()
-    """
-    This signal is emitted on Windows when we receive the
-    ``WM_DWMCOMPOSITIONCHANGED`` message.
-    """
 
     # Public Variables
     session = None
