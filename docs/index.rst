@@ -66,6 +66,7 @@ API
 .. toctree::
     :maxdepth: 2
 
+    api/path
     api/plugins
     api/profile
     api/singleinstance

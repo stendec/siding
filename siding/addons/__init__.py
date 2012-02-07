@@ -16,37 +16,21 @@
 #
 ###############################################################################
 """
-siding is a lightweight framework to assist in the creation of PySide
-applications with support for multiple-instance detection, multiple profiles,
-easy to use styles, and a flexible plugins system.
+A flexible add-ons system that's easy to extend with new types of add-ons,
+provides a nice pre-built user interface for use in your applications, and that
+has an easy-to-customize in-app update system.
 """
 
 ###############################################################################
 # Imports
 ###############################################################################
 
-import logging
-
-from siding import addons, path, profile
-from siding.singleinstance import QSingleApplication
+from siding.addons.base import AddonInfo
 
 ###############################################################################
 # Exports
 ###############################################################################
 
-__authors__ = ["Stendec"]
-__version__ = "0.1.0"
-
 __all__ = [
-    "__authors__", "__version__",  # Metadata
-
-    addons, path, profile,  # Modules
-
-    QSingleApplication,  # Classes
-    ]
-
-###############################################################################
-# Logging
-###############################################################################
-
-logging.getLogger("siding").addHandler(logging.NullHandler())
+    AddonInfo,  # Classes
+]

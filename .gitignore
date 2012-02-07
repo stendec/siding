@@ -1,8 +1,9 @@
-# Compiled Python files
+# Compiled and Build Stuff
 *.py[co]
-
-# Compiled Documentation
+/build/
+/dist/
 /docs/_build/
+MANIFEST
 
 # Backup files
 *.sw[po]
@@ -13,4 +14,4 @@ Thumbs.db
 .DS_Store
 
 # PyCharm Nonsense
-.idea/
+/.idea/

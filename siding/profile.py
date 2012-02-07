@@ -33,37 +33,26 @@ import sys
 from PySide.QtCore import QCoreApplication, QSettings
 from PySide.QtGui import QDesktopServices
 
-try:
-    import pkg_resources as pr
-except ImportError:
-    pr = None
+from siding import path
 
 ###############################################################################
 # Logging
 ###############################################################################
 
 import logging
-
 log = logging.getLogger("siding.profile")
 
 ###############################################################################
 # Constants and Storage
 ###############################################################################
 
-SOURCE_ANY = 0b111
-SOURCE_PROFILE = 0b100
-SOURCE_PKG_RESOURCES = 0b010
-SOURCE_ROOT = 0b001
-
 name = 'default'
 settings = None
-portable = False
 
-package = None
+portable = False
 
 profile_path = None
 root_path = None
-cache_path = None
 
 ###############################################################################
 # Internal Functions
@@ -74,74 +63,30 @@ def assert_profile():
     if settings is None:
         raise RuntimeError("A profile hasn't been loaded.")
 
-##### Path Stuff ##############################################################
-
 def ensure_paths():
-    """ Ensure cache_path, profile_path, and root_path are set. """
-    global cache_path
+    """ Ensure profile_path is set, and that it's registered with path. """
     global profile_path
     global root_path
 
+    # If we don't have root path, don't worry about it.
     if not root_path:
-        root_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+        root_path = path.root()
+        path.add_source(root_path)
 
+    # If we don't have profile_path, make it.
     if not profile_path:
-        # The profile path is a bit trickier than the root path, since it can
-        # move depending on the portability flag.
         if portable:
-            path = root_path
+            profile_path = root_path
         else:
-            path = os.path.abspath(get_data_path())
+            profile_path = path.appdata()
 
-        # Add the Profiles/<profile> bit to the profile path, and ensure the
-        # path actually exists.
-        path = os.path.join(path, u'Profiles', name)
-        if not os.path.exists(path):
-            os.makedirs(path)
+        # Add the "Profiles/<profile>" bit to the profile path and ensure it
+        # exists.
+        profile_path = os.path.join(profile_path, 'Profiles', name)
+        if not os.path.exists(profile_path):
+            os.makedirs(profile_path)
 
-        profile_path = path
-
-    if not cache_path:
-        # The cache path is like the profile path, in that it varies based on
-        # the portability flag.
-        if portable:
-            path = os.path.join(root_path, u'cache')
-        else:
-            path = QDesktopServices.storageLocation(
-                QDesktopServices.CacheLocation)
-
-        # Add the Profiles/<profile> bit to the cache path, and ensure the path
-        # actually exists.
-        path = os.path.join(path, u'Profiles', name)
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        cache_path = path
-
-
-def get_home():
-    """ Returns the path to the user's home directory. """
-    return QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
-
-def get_data_path():
-    """
-    Returns the path that application data should be stored in. This acts a bit
-    special on Windows machines, using the APPDATA environment variable to
-    ensure things go to AppData\Roaming and not AppData\Local.
-    """
-    if os.name == 'nt':
-        qapp = QCoreApplication.instance()
-        path = os.getenv('APPDATA')
-
-        if qapp.organizationName():
-            path = os.path.join(path, qapp.organizationName())
-
-        if qapp.applicationName():
-            path = os.path.join(path, qapp.applicationName())
-
-        return path
-
-    return QDesktopServices.storageLocation(QDesktopServices.DataLocation)
+        path.add_source(profile_path)
 
 ###############################################################################
 # Settings Getters / Setters
@@ -185,282 +130,6 @@ def remove(key):
     settings.remove(key)
 
 ###############################################################################
-# Path Manipulation Functions
-###############################################################################
-
-def get_file(path, mode='rb', source=SOURCE_ANY):
-    """
-    Find and open the file at the given ``path``.
-
-    This function first searches in the active profile's directory. If the
-    file is not found there, and configuration is available, it attempts to use
-    `pkg_resources <http://packages.python.org/distribute/pkg_resources.html>`_
-    to locate the file, otherwise it will search the root directory.
-
-    If a file cannot be found, return ``None``.
-    
-    **Note:** ``mode`` is not used when getting a file from ``pkg_resources``.
-    """
-    if os.path.isabs(path):
-        if os.path.isfile(path):
-            return open(path, mode)
-        return None
-
-    # Not an absolute path, so process it.
-    ensure_paths()
-
-    if source & SOURCE_PROFILE:
-        p_path = os.path.join(profile_path, path)
-        if os.path.isfile(p_path):
-            return open(p_path, mode)
-
-    if source & SOURCE_PKG_RESOURCES:
-        if (package and pr and pr.resource_exists(package, path) and
-                not pr.resource_isdir(package, path)):
-            return pr.resource_stream(package, path)
-
-    if source & SOURCE_ROOT:
-        r_path = os.path.join(root_path, path)
-        if os.path.isfile(r_path):
-            return open(r_path, mode)
-
-
-def get_source(path, only_files=False, source=SOURCE_ANY):
-    """ Return the source that ``path`` is found in. """
-    ensure_paths()
-    
-    if source & SOURCE_PROFILE:
-        p_path = os.path.join(profile_path, path)
-        if os.path.exists(p_path) and (not only_files or
-                                       os.path.isfile(p_path)):
-            return SOURCE_PROFILE
-    
-    if source & SOURCE_PKG_RESOURCES:
-        if (package and pr and pr.resource_exists(package, path) and
-                (not only_files or not pr.resource_isdir(package, path))):
-            return SOURCE_PKG_RESOURCES
-    
-    if source & SOURCE_ROOT:
-        r_path = os.path.join(root_path, path)
-        if os.path.exists(r_path) and (not only_files or
-                                       os.path.isfile(r_path)):
-            return SOURCE_ROOT
-
-    return 0
-
-
-def get_filename(path, always=True, only_files=False, source=SOURCE_ANY):
-    """
-    Find the file at the given ``path`` and return the absolute path.
-
-    If ``only_files`` is True, paths will be checked to ensure that they're
-    not directories.
-
-    This function first searches in the active profile's directory. If the
-    file is not found there, and configuration is available, it attempts to use
-    `pkg_resources <http://packages.python.org/distribute/pkg_resources.html>`_
-    to locate the file, otherwise it will search the root directory.
-
-    If a file cannot be found, and ``always`` is True, a path to a hypothetical
-    file in the active profile's directory will be returned. If ``always`` is
-    True and ``only_files`` is also True, and the path in the active profile's
-    directory exists and is a directory, returns ``None``. Otherwise, if a file
-    cannot be found, returns ``None``.
-
-    **Note:** You should use this function as little as possible, as it may
-    require a file to be temporarily written to a cache if the file is found
-    with ``pkg_resources``.
-    """
-    if os.path.isabs(path):
-        if only_files and os.path.isdir(path):
-            return None
-        if always or os.path.exists(path):
-            return path
-
-    # Not an absolute path, so process it.
-    ensure_paths()
-
-    p_path = os.path.abspath(os.path.join(profile_path, path))
-    if source & SOURCE_PROFILE:
-        if os.path.exists(p_path) and (not only_files or
-                                      (only_files and os.path.isfile(p_path))):
-            return p_path
-
-    if source & SOURCE_PKG_RESOURCES:
-        if (package and pr and pr.resource_exists(package, path) and
-                (not only_files or (only_files and not pr.resource_isdir(
-                    package, path)))):
-            return pr.resource_filename(package, path)
-
-    if source & SOURCE_ROOT:
-        r_path = os.path.abspath(os.path.join(root_path, path))
-        if os.path.exists(r_path) and (not only_files or
-                                      (only_files and os.path.isfile(r_path))):
-            return r_path
-
-    if always and (not only_files or (only_files and not
-            os.path.isdir(p_path))):
-        return p_path
-
-
-def join(*parts):
-    """ Return a path built from parts, using / as separators. """
-    path = os.path.join(*parts)
-    if os.name == 'nt':
-        path = path.replace('\\', '/')
-    return path
-
-
-def normpath(path):
-    """ Return a normalized pathname, using / as separators. """
-    path = os.path.normpath(path)
-    if os.name == 'nt':
-        path = path.replace('\\', '/')
-    return path
-
-def listdir(path, source=SOURCE_ANY):
-    """
-    Returns a list of entries at the given path.
-
-    The list is built using the active profile's directory, ``pkg_resources``
-    if available, and the application root directory.
-    """
-    if os.path.isabs(path):
-        return os.listdir(path)
-
-    # Not absolute, so process it.
-    ensure_paths()
-    output = []
-
-    # Start with the profile.
-    if source & SOURCE_PROFILE:
-        p_path = os.path.join(profile_path, path)
-        if os.path.isdir(p_path):
-            for entry in os.listdir(p_path):
-                output.append(entry)
-
-    # Now, pkg_resources.
-    if source & SOURCE_PKG_RESOURCES:
-        if package and pr and pr.resource_isdir(package, path):
-            for entry in pr.resource_listdir(package, path):
-                if not entry in output:
-                    output.append(entry)
-
-    # Finally, root.
-    if source & SOURCE_ROOT:
-        r_path = os.path.join(root_path, path)
-        if os.path.isdir(r_path):
-            for entry in os.listdir(r_path):
-                if not entry in output:
-                    output.append(entry)
-
-    return output
-
-
-def exists(path, source=SOURCE_ANY):
-    """ Returns True if the path exists, otherwise returns False. """
-    if os.path.isabs(path):
-        return os.path.exists(path)
-
-    # Not absolute, so process it.
-    ensure_paths()
-
-    if source & SOURCE_PROFILE:
-        if os.path.exists(os.path.join(profile_path, path)):
-            return True
-
-    if source & SOURCE_PKG_RESOURCES:
-        if package and pr and pr.resource_exists(package, path):
-            return True
-
-    if source & SOURCE_ROOT:
-        return os.path.exists(os.path.join(root_path, path))
-
-    return False
-
-def isdir(path, source=SOURCE_ANY):
-    """ Returns True if the path is a directory, otherwise returns False. """
-    if os.path.isabs(path):
-        return os.path.isdir(path)
-
-    # Not absolute, so process it.
-    ensure_paths()
-
-    if source & SOURCE_PROFILE:
-        if os.path.isdir(os.path.join(profile_path, path)):
-            return True
-
-    if source & SOURCE_PKG_RESOURCES:
-        if package and pr and pr.resource_isdir(package, path):
-            return True
-
-    if source & SOURCE_ROOT:
-        return os.path.isdir(os.path.join(root_path, path))
-    
-    return False
-
-
-def isfile(path, source=SOURCE_ANY):
-    """ Returns True if the path is a file, otherwise returns False. """
-    if os.path.isabs(path):
-        return os.path.isfile(path)
-
-    # Not absolute, so process it.
-    ensure_paths()
-
-    if source & SOURCE_PROFILE:
-        if os.path.isfile(os.path.join(profile_path, path)):
-            return True
-
-    if source & SOURCE_PKG_RESOURCES:
-        if (package and pr and pr.resource_exists(package, path) and not
-                pr.resource_isdir(package, path)):
-            return True
-
-    if source & SOURCE_ROOT:
-        return os.path.isfile(os.path.join(root_path, path))
-
-    return False
-
-
-def walk(top, topdown=True, onerror=None, followlinks=False,
-         source=SOURCE_ANY):
-    """
-    Recursively walk a path, similarly to :func:`os.walk`, but returning a
-    combined list of entries in the profile directory, ``pkg_resources``, and
-    the application root directory.
-
-    See :func:`os.walk` for more details.
-    """
-    try:
-        names = listdir(top, source)
-    except OSError, err:
-        if onerror is not None:
-            onerror(err)
-        return
-
-    dirs, nondirs = [], []
-    for name in names:
-        entry = join(top, name)
-        if isdir(entry, source):
-            dirs.append(name)
-        if isfile(entry, source) or not isdir(entry, source):
-            nondirs.append(name)
-
-    if topdown:
-        yield top, dirs, nondirs
-    for name in dirs:
-        new_path = join(top, name)
-        # If it's a link at profile_path or root_path, don't walk it.
-        if (followlinks or
-                not os.path.islink(os.path.join(profile_path, new_path)) or
-                not os.path.islink(os.path.join(root_path, new_path))):
-            for x in walk(new_path, topdown, onerror, followlinks, source):
-                yield x
-    if not topdown:
-        yield top, dirs, nondirs
-
-###############################################################################
 # Initialization
 ###############################################################################
 
@@ -472,13 +141,17 @@ def initialize(args=None, **kwargs):
     =============  ============  ============
     Argument       Default       Description
     =============  ============  ============
-    portable       ``False``     If True, the profile system will attempt to live entirely in the root path.
+    portable       ``False``     If True, the profile system will create a profile path within the root folder, allowing the application to work as a portable app.
     profile        ``default``   The name of the profile to load.
-    package                      If this is set, and ``pkg_resources`` is available, then attempt to find resources in this package or requirement.
-    profile_path                 If this is set, load the profile from this path.
-    root_path                    The application root directory. If not set, this will be calculated with ``os.path.abspath(os.path.dirname(sys.argv[0]))``.
-    cache_path                   If this is set, this path will be used to cache data rather than a profile-specific path.
+    sources        ``[]``        A list of additional sources for the path system to use.
+    profile_path                 Load the profile from this path.
+    root_path                    The application root directory. This is always the last path to be checked by the path system.
     =============  ============  ============
+
+    .. warning::
+        ``root_path`` will *probably* not work as expected after your
+        application is frozen into an executable, so be sure to test that it's
+        working properly before distributing your application.
 
     In addition, you can provide a list of command line arguments to have
     siding load them automatically. Example::
@@ -490,20 +163,17 @@ def initialize(args=None, **kwargs):
     ===================  ============
     Argument             Description
     ===================  ============
-    ``--portable``       If set, the profile system will attempt to live entirely in the ``root_path``.
+    ``--portable``       If True, the profile system will create a profile path within the root folder, allowing the application to work as a portable app.
     ``--profile``        The name of the profile to load.
-    ``--profile-path``   If this is set, load the profile from this path.
+    ``--profile-path``   The path to load the profile from.
     ``--root-path``      The application root directory.
-    ``--cache-path``     If this is set, this path will be used to cache data rather than a profile-specific path.
-    ``--package``        If this is set, and ``pkg_resources`` is available, then attempt to find resources in this package or requirement.
+    ``--source``         An additional source for the path system. This can be used multiple times.
     ===================  ============
     """
     global name
     global portable
-    global package
     global profile_path
     global root_path
-    global cache_path
     global settings
 
     # Set the defaults now.
@@ -511,10 +181,11 @@ def initialize(args=None, **kwargs):
     name = kwargs.get('profile', 'default')
 
     # And load the paths if we've got them.
-    package = kwargs.get('package', package)
     root_path = kwargs.get('root_path', root_path)
     profile_path = kwargs.get('profile_path', profile_path)
-    cache_path = kwargs.get('cache_path', cache_path)
+
+    # Get the source list.
+    sources = kwargs.get('sources', [])
 
     # Now, parse the options we've got.
     if args:
@@ -526,8 +197,7 @@ def initialize(args=None, **kwargs):
         parser.add_argument('--profile')
         parser.add_argument('--profile-path')
         parser.add_argument('--root-path')
-        parser.add_argument('--cache-path')
-        parser.add_argument('--package')
+        parser.add_argument('--source', action='append')
 
         options = parser.parse_known_args(args)[0]
 
@@ -537,9 +207,6 @@ def initialize(args=None, **kwargs):
 
         if options.profile:
             name = options.profile
-
-        if options.package:
-            package = package
 
         if options.profile_path:
             profile_path = options.profile_path
@@ -551,14 +218,26 @@ def initialize(args=None, **kwargs):
             if not os.path.exists(root_path):
                 parser.error("The specified root path doesn't exist.")
 
-        if options.cache_path:
-            cache_path = options.cache_path
-            if not os.path.exists(cache_path):
-                os.makedirs(cache_path)
+        if options.source:
+            for source in options.source:
+                if not source in sources:
+                    if not os.path.exists(source):
+                        parser.error("The source %r doesn't exist." % source)
+                    sources.append(source)
+
+    # Now, do the path stuff.
+    for source in sources:
+        path.add_source(source)
+
+    # Do we already have our paths?
+    if profile_path or root_path:
+        path.add_source(profile_path)
+
+    # Make sure.
+    ensure_paths()
 
     # Now, open the settings file with QSettings and we're done.
-    ensure_paths()
-    file = os.path.join(profile_path, u'settings.ini')
+    file = os.path.join(profile_path, 'settings.ini')
     settings = QSettings(file, QSettings.IniFormat)
 
     log.info(u'Using profile: %s (%s)' % (name, profile_path))

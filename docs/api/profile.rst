@@ -12,18 +12,6 @@ Settings
 .. autofunction:: get
 .. autofunction:: remove
 
-Path Manipulation
-=================
-
-.. autofunction:: get_file
-.. autofunction:: get_filename
-
-.. autofunction:: exists
-.. autofunction:: isdir
-.. autofunction:: isfile
-.. autofunction:: join
-.. autofunction:: listdir
-
 Initialization
 ==============
 
