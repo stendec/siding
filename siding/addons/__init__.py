@@ -27,6 +27,8 @@ has an easy-to-customize in-app update system.
 
 from siding.addons.base import action, AddonInfo
 
+safe_mode = False
+
 ###############################################################################
 # Exports
 ###############################################################################

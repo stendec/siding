@@ -38,7 +38,7 @@ from siding.version import Version, VersionMatch
 
 def action(text=None, icon=None, status_tip=None, tool_tip=None,
            whats_this=None, default=False, checkable=False, is_checked=None,
-           is_enabled=None):
+           is_enabled=None, is_visible=None):
     """
     This decorator marks a method of an :class:`AddonInfo` subclass as an
     action that should be exposed to the user interface. These actions are
@@ -152,10 +152,6 @@ def action(text=None, icon=None, status_tip=None, tool_tip=None,
     """
 
     def decorator(func):
-        global is_checked
-        global is_enabled
-        global is_visible
-
         # Public things we don't care about.
         func.text = text
         func.icon = icon
@@ -172,32 +168,35 @@ def action(text=None, icon=None, status_tip=None, tool_tip=None,
         func._is_visible = is_visible
 
         # Decorators.
-        def is_checked(checker):
+        def d_is_checked(checker):
             func._is_checked = checker
             return checker
-        is_checked.__doc__ = (
+        d_is_checked.__name__ = 'is_checked'
+        d_is_checked.__doc__ = (
             "Register a function with the action %s for determining whether "
             "or not the action is currently checked." % func.__name__
             )
-        func.is_checked = is_checked
+        func.is_checked = d_is_checked
 
-        def is_enabled(checker):
+        def d_is_enabled(checker):
             func._is_enabled = checker
             return checker
-        is_enabled.__doc__ = (
+        d_is_enabled.__name__ = 'is_enabled'
+        d_is_enabled.__doc__ = (
             "Register a function with the action %s for determining whether "
             "or not the action should be enabled." % func.__name__
             )
-        func.is_enabled = is_enabled
+        func.is_enabled = d_is_enabled
 
-        def is_visible(checker):
+        def d_is_visible(checker):
             func._is_visible = checker
             return checker
-        is_visible.__doc__ = (
+        d_is_visible.__name__ = 'is_visible'
+        d_is_visible.__doc__ = (
             "Register a function with the action %s for determining whether "
             "or not the action should be visible." % func.__name__
         )
-        func.is_visible = is_visible
+        func.is_visible = d_is_visible
 
         # Return our function.
         return func
@@ -217,7 +216,7 @@ class AddonInfo(object):
     information from file.
     """
 
-    CORE_VALUES = (('version', Version),)
+    CORE_VALUES = tuple()
     """
     A list of value keys that should be read from the Core section of the
     information file for this type of add-on. Items in this list should be
@@ -225,7 +224,9 @@ class AddonInfo(object):
 
     If a list or tuple is used in the list of values, they should use the
     format ``(name, format)`` where ``format`` is a callable, such as a class,
-    that accepts a single value and returns something.
+    that accepts a single value and returns something. If ``format`` is a
+    string, that string will be evaluated as necessary. The result should be
+    a callable that can be used to format the value.
     """
 
     version = Version('1')
@@ -253,6 +254,8 @@ class AddonInfo(object):
         # Do we have a file? If so, make sure it exists, store the info, and
         # load it.
         if filename:
+            print path._sources
+            print path.exists(filename)
             if not path.exists(filename):
                 raise IOError(errno.ENOENT, 'No such file or directory: %r' %
                               filename)
@@ -312,9 +315,11 @@ class AddonInfo(object):
                 "add-on %r." % self.name
             )
 
-        for key in CORE_VALUES:
+        for key in self.CORE_VALUES + ('version',):
             if isinstance(key, (list, tuple)):
                 key, key_type = key
+                if isinstance(key_type, basestring):
+                    key_type = eval(key_type)
             else:
                 key_type = lambda thing: thing
 
@@ -342,3 +347,6 @@ class AddonInfo(object):
         # description of the add-on.
         if parser.has_section('Data'):
             self.data.update(parser.items('Data'))
+
+        if parser.has_section('Description'):
+            self.data.update(parser.items('Description'))

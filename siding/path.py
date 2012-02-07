@@ -37,6 +37,7 @@ import errno
 import imp
 import os
 import sys
+import types
 
 try:
     import pkg_resources
@@ -92,6 +93,9 @@ def add_source(source, add_to_start=False):
     find it. It's recommended to prefix your packages with ``"py:"`` to prevent
     any chance of confusion.
 
+    If you provide a module for ``source``, we'll use ``source.__name__`` to
+    get its name and store that.
+
     If ``add_to_start`` is True, the source will be added to the beginning of
     the list rather than the end.
 
@@ -140,6 +144,10 @@ def add_source(source, add_to_start=False):
             finally:
                 if file:
                     file.close()
+
+    elif isinstance(source, types.ModuleType):
+        assert_pkg_resources()
+        source = 'py:%s' % source.__name__
 
     elif not isinstance(source, _Requirement):
         assert_pkg_resources()

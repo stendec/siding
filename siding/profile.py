@@ -69,6 +69,8 @@ def ensure_paths():
     global root_path
 
     # If we don't have root path, don't worry about it.
+    if not root_path:
+        root_path = path.root()
 
     # If we don't have profile_path, make it.
     if not profile_path:

@@ -28,6 +28,7 @@ easy to use styles, and a flexible plugins system.
 import logging
 
 from siding import addons, path, profile
+from siding import style
 from siding.singleinstance import QSingleApplication
 
 ###############################################################################
@@ -41,6 +42,8 @@ __all__ = [
     "__authors__", "__version__",  # Metadata
 
     addons, path, profile,  # Modules
+
+    style,  # Secondary Modules
 
     QSingleApplication,  # Classes
     ]

@@ -2,6 +2,10 @@ import argparse
 import os
 import sys
 
+import logging
+logging.getLogger('').setLevel(logging.DEBUG)
+logging.info('!')
+
 # Now, the important bits. import siding and make an application.
 import siding
 app = siding.QSingleApplication(sys.argv)
@@ -22,7 +26,7 @@ app.ensure_single()
 # Since we're here, we're the only application. Continue loading as normal.
 # While we're at it, initialize some more of siding.
 siding.style.initialize(True)
-siding.plugins.initialize(True)
+#siding.plugins.initialize(True)
 
 # At this point, let's stop for a moment and import our window.
 import main_window
