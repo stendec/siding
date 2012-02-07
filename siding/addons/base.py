@@ -16,7 +16,8 @@
 #
 ###############################################################################
 """
-This module contains :class:`AddonInfo`, the core of the add-on system.
+This module contains :class:`AddonInfo`, the most important class of the
+add-on system.
 """
 
 ###############################################################################
@@ -30,7 +31,7 @@ from collections import OrderedDict
 from ConfigParser import SafeConfigParser
 
 from siding import path
-from siding.version import Version, VersionMatch
+from siding.addons.version import Version, VersionMatch
 
 ###############################################################################
 # Action Decorator

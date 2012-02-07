@@ -214,7 +214,7 @@ def normpath(name):
     """
     name = os.path.normpath(name)
     if os.name == 'nt':
-        path = name.replace('\\', '/')
+        name = name.replace('\\', '/')
     return name
 
 ###############################################################################
@@ -282,7 +282,7 @@ def open(name, mode='rb', source=None):
         if pkg_resources.resource_isdir(src, name):
             raise IOError(errno.EACCES, 'Cannot open directory: %r' % name)
 
-        return resource.stream(src, name)
+        return pkg_resources.resource_stream(src, name)
 
     # Still here? Guess we didn't find it.
     if mode.startswith('a'):
@@ -319,7 +319,6 @@ def source(name, source=None):
     # Iterate through the sources.
     if isinstance(source, (tuple, list)):
         sources = list(source)
-        source = None
     else:
         sources = [source] if source else _sources
 
@@ -395,16 +394,15 @@ def abspath(name, creating=False, source=None):
 ###############################################################################
 
 def listdir(name, source=None):
-    """ Returns a list of entries at the given path. """
+    """ Generate the entries at a given path. """
     if os.path.isabs(name):
-        return os.listdir(name)
+        for entry in os.listdir(name):
+            yield entry
+        return
 
-    # Set ourselves up.
-    output = []
-
+    # Figure out what we're iterating.
     if isinstance(source, (tuple, list)):
         sources = list(source)
-        source = None
     else:
         sources = [source] if source else _sources
 
@@ -422,10 +420,7 @@ def listdir(name, source=None):
                 continue
             this_src = pkg_resources.resource_listdir(src, name)
         for entry in this_src:
-            if not entry in output:
-                output.append(entry)
-
-    return output
+            yield entry
 
 def exists(name, source=None):
     """  Returns True if the path exists, False otherwise. """
@@ -435,7 +430,6 @@ def exists(name, source=None):
     # Iterate to find the path.
     if isinstance(source, (tuple, list)):
         sources = list(source)
-        source = None
     else:
         sources = [source] if source else _sources
 
@@ -464,7 +458,6 @@ def isdir(name, source=None):
     # Iterate to find the path.
     if isinstance(source, (tuple, list)):
         sources = list(source)
-        source = None
     else:
         sources = [source] if source else _sources
 
@@ -493,7 +486,6 @@ def isfile(name, source=None):
     # Iterate to find the path.
     if isinstance(source, (tuple, list)):
         sources = list(source)
-        source = None
     else:
         sources = [source] if source else _sources
 

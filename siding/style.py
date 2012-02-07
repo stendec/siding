@@ -29,19 +29,18 @@ Style also pre-processes Qt stylesheets, allowing you to use relative URLs and
 ###############################################################################
 
 import argparse
-import os
 import sys
 import weakref
 
 from PySide import QtGui
-from PySide.QtCore import Signal, QUrl, QObject
+from PySide.QtCore import Signal, QObject
 from PySide.QtGui import QApplication, QIcon, QWidget, QPixmap, QImageReader
 
 from siding import addons, path, profile
 
-if os.name == 'nt':
+try:
     from siding import _aeroglass
-else:
+except ImportError:
     _aeroglass = None
 
 ###############################################################################
@@ -97,7 +96,7 @@ class StyleInfo(addons.AddonInfo):
 
     CORE_VALUES = (
         ('aero', bool),
-        ('inherits', 'self._check_inherits'),
+        'inherits',
         ('ui', _widget_style),
         )
 
@@ -106,14 +105,12 @@ class StyleInfo(addons.AddonInfo):
     inherits = None
     ui = None
 
-    ##### Internal Nonsense ###################################################
+    ##### Inheritance Nonsense ################################################
 
-    def _check_inherits(self, value):
-        """ Make sure we don't enter an inheritance loop. """
-        if value.lower() == self.name.lower():
-            log.warning('Style %r inherits itself.' % self.data['name'])
-            log.debug('Disabling inheritance on style %r.' % self.data['name'])
-            return None
+    def on_inheritance_issue(self):
+        """ If there's a problem with inheritance, just clear it. """
+        log.debug('Disabling inheritance for style %r.' % self.data['name'])
+        self.inherits = None
 
     ##### Actions #############################################################
 
@@ -525,4 +522,10 @@ def initialize(args=None, **kwargs):
         log.info('Not loading a style due to safe-mode.')
         return
 
-    activate_style(StyleInfo('default', 'styles/default/style.ini'))
+    s = StyleInfo(style, 'styles/%s/style.ini' % style)
+
+    for key in dir(s):
+        value = getattr(s, key)
+        if not getattr(value, '_is_action', False):
+            continue
+        print 'Action Detected: %s -- %s' % (key, value.text)

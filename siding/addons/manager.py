@@ -16,28 +16,39 @@
 #
 ###############################################################################
 """
-A flexible add-ons system that's easy to extend with new types of add-ons,
-provides a nice pre-built user interface for use in your applications, and that
-has an easy-to-customize in-app update system.
+This module contains the core of the add-ons system. It handles discovery,
+dependencies, loading, keeping track of available add-ons, and querying the
+system to get an :class:`AddonInfo` instance.
 """
 
 ###############################################################################
 # Imports
 ###############################################################################
 
-from siding.addons.base import action, AddonInfo
-from siding.addons.manager import manager
+from PySide.QtCore import QObject, Signal, Slot
 
-safe_mode = False
+from siding.addons.base import AddonInfo
+from siding import path
 
 ###############################################################################
-# Exports
+# Log
 ###############################################################################
 
-__all__ = [
-    manager,  # The All Powerful
+import logging
+log = logging.getLogger('siding.addons')
 
-    action,  # Decorators
+###############################################################################
+# The Add-on Manager
+###############################################################################
 
-    AddonInfo,  # Classes
-]
+class AddonManager(QObject):
+    """
+    This class is in charge of the entire add-on system. It discovers add-ons,
+    handles dependencies and inheritance, loads add-ons, stores references to
+    all the loaded add-ons, and allows you to easily fetch an add-on's info
+    instance if you know its type and name.
+    """
+    pass
+
+# Now, instance the manager.
+manager = AddonManager()

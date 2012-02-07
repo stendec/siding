@@ -117,6 +117,9 @@ class QSingleApplication(QApplication):
     _already = None
 
     def __init__(self, *args, **kwargs):
+        if not args:
+            args = (sys.argv,)
+
         QApplication.__init__(self, *args, **kwargs)
 
         # If this is Windows, then _aeroglass is imported already, so hook up

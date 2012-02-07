@@ -24,6 +24,10 @@ Functions for enabling and disabling Aero Glass on
 # Imports
 ###############################################################################
 
+import os
+if not os.name == 'nt':
+    raise ImportError('Aero Glass only works in Windows.')
+
 import weakref
 
 from PySide.QtCore import Qt

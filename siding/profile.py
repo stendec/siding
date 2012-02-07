@@ -30,8 +30,7 @@ import os
 import argparse
 import sys
 
-from PySide.QtCore import QCoreApplication, QSettings
-from PySide.QtGui import QDesktopServices
+from PySide.QtCore import QSettings
 
 from siding import path
 

@@ -28,7 +28,7 @@ easy to use styles, and a flexible plugins system.
 import logging
 
 from siding import addons, path, profile
-from siding import style
+from siding import style, plugins
 from siding.singleinstance import QSingleApplication
 
 ###############################################################################
@@ -53,3 +53,32 @@ __all__ = [
 ###############################################################################
 
 logging.getLogger("siding").addHandler(logging.NullHandler())
+
+###############################################################################
+# Initialize
+###############################################################################
+
+def initialize(organization_name=None, application_name=None, version=None):
+    """
+    If you're feeling particularly lazy, this function will handle all the
+    initialization for you and return a :class:`QSingleApplication` instance.
+    """
+
+    # Make the app.
+    app = QSingleApplication()
+
+    # Store our info.
+    if organization_name:
+        app.setOrganizationName(organization_name)
+    if application_name:
+        app.setApplicationName(application_name)
+    if version:
+        app.setApplicationVersion(version)
+    
+    # Do the initialization.
+    profile.initialize(True)
+    app.ensure_single()
+    plugins.initialize(True)
+    style.initialize(True)
+
+    return app

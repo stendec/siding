@@ -16,28 +16,44 @@
 #
 ###############################################################################
 """
-A flexible add-ons system that's easy to extend with new types of add-ons,
-provides a nice pre-built user interface for use in your applications, and that
-has an easy-to-customize in-app update system.
+TODO: Write this docstring.
 """
 
 ###############################################################################
 # Imports
 ###############################################################################
 
-from siding.addons.base import action, AddonInfo
-from siding.addons.manager import manager
+import argparse
 
-safe_mode = False
+from siding.addons import action, AddonInfo
 
 ###############################################################################
-# Exports
+# Initialization
 ###############################################################################
 
-__all__ = [
-    manager,  # The All Powerful
+def initialize(args=None, **kwargs):
+    """
+    Initialize the plugin system. You may use the following arguments to
+    configure the plugin system:
 
-    action,  # Decorators
+    ==============  ==============  ============
+    Argument        Default         Description
+    ==============  ==============  ============
+    nothing         to see          here
+    ==============  ==============  ============
 
-    AddonInfo,  # Classes
-]
+    In addition, you can provide a list of command line arguments to have
+    siding load them automatically. Example::
+
+        siding.plugins.initialize(sys.argv[1:])
+
+    The following command line arguments are supported:
+
+    ==================  ============
+    Argument            Description
+    ==================  ============
+    ``--safe-mode``     When safe mode is enabled, add-ons, including styles, won't be loaded automatically.
+    ``--plugin-path``   Add the given path to the plugin search paths. This may be used more than once.
+    ==================  ============
+    """
+    pass

@@ -16,9 +16,8 @@
 #
 ###############################################################################
 """
-A simple pair of classes for easily comparing and testing version numbers.
-These are used internally by :doc:`plugins` for testing plugin
-dependencies.
+A simple pair of classes for easily comparing and testing version numbers. They
+are used internally by :doc:`addons` for testing add-on dependencies.
 """
 
 ###############################################################################
