@@ -234,6 +234,7 @@ class AddonInfo(object):
     file = None
     path = None
     path_source = None
+    _type_name = None
 
     def __init__(self, name, filename, filedata=None, source=None):
         """

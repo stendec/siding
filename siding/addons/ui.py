@@ -44,7 +44,7 @@ class AddonTypeTab(QWidget):
     """
 
     def __init__(self, type, parent=None):
-        super(AddonTypeTab, self).__init__(parent)
+        QWidget.__init__(self, parent)
 
         # Get our info.
         self.name = type
@@ -72,7 +72,7 @@ class ManagerWindow(QMainWindow):
     """
 
     def __init__(self, parent=None):
-        super(ManagerWindow, self).__init__(parent)
+        ManagerWindow.__init__(self, parent)
 
         # Set the window title and size.
         self.setWindowTitle(self.tr("Add-on Manager"))

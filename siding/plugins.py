@@ -76,7 +76,7 @@ class IPlugin(QObject):
 
     def __init__(self, manager, info):
         """ Perform minimal plugin initialization. """
-        super(IPlugin, self).__init__()
+        QObject.__init__(self)
 
         self._manager = manager
         self._info = info
@@ -201,7 +201,7 @@ class IPlugin(QObject):
             for signal in self._manager._signals[signame]:
                 signal.connect(slot)
 
-        for signam in self._manager._slots:
+        for signame in self._manager._slots:
             signal = getattr(self, signame, None)
             if not signal or not isinstance(signal, Signal):
                 continue
@@ -209,7 +209,7 @@ class IPlugin(QObject):
             for slot in self._manager._slots[signame]:
                 signal.connect(slot)
 
-    def _disconnect_signals(selfself):
+    def _disconnect_signals(self):
         """ Disconnect all of our signals and slots. """
         for signame in self._manager._signals:
             slot = getattr(self, signame, None)
@@ -219,7 +219,7 @@ class IPlugin(QObject):
             for signal in self._manager._signals[signame]:
                 signal.disconnect(slot)
 
-        for signam in self._manager._slots:
+        for signame in self._manager._slots:
             signal = getattr(self, signame, None)
             if not signal or not isinstance(signal, Signal):
                 continue
@@ -352,8 +352,8 @@ class PluginInfo(addons.AddonInfo):
                 self.path_source.startswith('py:')):
             # It's a filesystem. Just do things the easy way.
             path = self.path.abspath('.')
+            file = None
             try:
-                file = None
                 file, pathname, description = imp.find_module(modname, [path])
                 module = imp.load_module(modname, file, pathname, description)
             finally:
@@ -364,8 +364,8 @@ class PluginInfo(addons.AddonInfo):
             # TODO: Fancy, pkg_resource importer code here.
             # Until then, a copy paste of the previous!
             path = self.path.abspath('.')
+            file = None
             try:
-                file = None
                 file, pathname, description = imp.find_module(modname, [path])
                 module = imp.load_module(modname, file, pathname, description)
             finally:

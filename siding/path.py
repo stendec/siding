@@ -682,7 +682,7 @@ class PathContext(object):
         return isfile(join(self.path, name), source=self._source)
 
     def islink(self, name):
-        if os.path.iabs(name):
+        if os.path.isabs(name):
             return os.path.islink(name)
         return islink(join(self.path, name), self._source)
 
