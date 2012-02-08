@@ -3,10 +3,21 @@
 
 .. automodule:: siding.addons
 
+Decorators
+==========
+
+.. autofunction:: action
+
 Functions
 =========
 
-.. autofunction:: action
+.. autofunction:: add_type
+.. autofunction:: discover
+.. autofunction:: get
+.. autofunction:: find
+
+.. autofunction:: check_dependencies
+.. autofunction:: check_inheritance
 
 AddonInfo
 =========
@@ -29,13 +40,22 @@ AddonInfo
 
     .. attribute:: path
 
-        The add-on's root path.
+        A :class:`siding.path.PathContext` instance for manipulating paths
+        within the add-on's root path. This should most likely be used for all
+        file operations involving an add-on, and it's easy to do so. Example::
 
-    .. attribute:: path_source
+            with my_addon.path.open(my_addon.file) as info_file:
+                info = info_file.read()
 
-        The source the add-on was found in.
+            do_something_with_that(info)
 
-        .. seealso:: :doc:`/api/path`
+    .. attribute:: filedata
+
+        A dictionary of any extra data gathered when matching the add-on's
+        filename. For example, if you register your add-on type with the
+        ``info_file`` of ``"{category}/{name}.{type"``, then the filedata
+        dictionary will contain a single key, ``category``, with that part
+        of the path for you to use.
 
     .. attribute:: data
 
@@ -49,6 +69,10 @@ AddonInfo
         load and function properly.
 
         .. seealso:: `Add-on Requirements`
+
+
+    .. autoattribute:: is_blacklisted
+
 
     .. automethod:: load_information
     .. automethod:: update_ui

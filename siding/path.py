@@ -179,6 +179,10 @@ def appdata():
 
     return QDesktopServices.storageLocation(QDesktopServices.DataLocation)
 
+def cache():
+    """ Return a path for writing temporary files. """
+    return QDesktopServices.storageLocation(QDesktopServices.CacheLocation)
+
 def home():
     """ Return the path to the user's home directory. """
     return QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
@@ -559,3 +563,113 @@ def walk(top, topdown=True, onerror=None, followlinks=False, source=None):
     if not topdown:
         yield top, dirs, nondirs
 
+###############################################################################
+# PathContext Class
+###############################################################################
+
+class PathContext(object):
+    """
+    The path context class is a special class that makes it easy to perform
+    multiple path commands working with a preset source. This is useful so that
+    add-ons can only locate and open files in the source the add-on information
+    files was found in.
+
+    Every path manipulation function available in ``siding.path`` is available
+    with a PathContext.
+    """
+
+    def __init__(self, path, source):
+        super(PathContext, self).__init__()
+        self.path = path
+        self._source = source
+
+    def add_source(self, source, add_to_start=False):
+        """ Add the given source to the PathContext's internal source list. """
+        if source in _sources:
+            return
+
+        # Make sure _source is a list.
+        if isinstance(self._source, (tuple, list)):
+            self._source = list(self._source)
+        else:
+            self._source = [self._source] if self._source else []
+
+        # Determine what indices to use.
+        start_ind = 0
+        end_ind = len(self._source)
+
+        from siding import profile
+        if profile.profile_path in self._source:
+            start_ind = self._source.index(profile.profile_path) + 1
+        if profile.root_path in self._source:
+            end_ind = self._source.index(profile.root_path)
+
+        # Sanitize our input.
+        if isinstance(source, basestring) and not source.startswith('py:'):
+            if os.path.exists(source):
+                source = os.path.abspath(source)
+            else:
+                file = None
+                try:
+                    file, path, desc = imp.find_module(source)
+
+                    assert_pkg_resources()
+                    source = 'py:%s' % source
+
+                except ImportError:
+                    raise IOError(errno.ENOENT,
+                        'No such file or directory or package: %r' % source)
+                finally:
+                    if file:
+                        file.close()
+
+        elif isinstance(source, types.ModuleType):
+            assert_pkg_resources()
+            source = 'py:%s' % source.__name__
+
+        elif not isinstance(source, _Requirement):
+            assert_pkg_resources()
+            raise TypeError('source must be a string or '
+                            'pkg_resources.Requirement')
+
+        # Now, add it.
+        if add_to_start:
+            self._source.insert(start_ind, source)
+        else:
+            self._source.insert(end_ind, source)
+
+    @staticmethod
+    def join(*parts):
+        return join(*parts)
+
+    @staticmethod
+    def normpath(name):
+        return normpath(name)
+
+    def open(self, name, mode='rb'):
+        return open(join(self.path, name), mode, source=self._source)
+
+    def source(self, name):
+        return source(name, source=self._source)
+
+    def abspath(self, name, creating=False):
+        return abspath(join(self.path, name), creating, source=self._source)
+
+    def listdir(self, name):
+        return listdir(join(self.path, name), source=self._source)
+
+    def exists(self, name):
+        return exists(join(self.path, name), source=self._source)
+
+    def isdir(self, name):
+        return isdir(join(self.path, name), source=self._source)
+
+    def isfile(self, name):
+        return isfile(join(self.path, name), source=self._source)
+
+    def islink(self, name):
+        return islink(join(self.path, name), self._source)
+
+    def walk(self,top, topdown=True, onerror=None, followlinks=False):
+        return walk(join(self.path, top), topdown, onerror, followlinks,
+                    source=self._source)

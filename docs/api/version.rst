@@ -1,7 +1,7 @@
-``siding.version``
-******************
+``siding.addons.version``
+*************************
 
-.. automodule:: siding.version
+.. automodule:: siding.addons.version
 
 Version
 =======

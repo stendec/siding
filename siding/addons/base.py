@@ -30,7 +30,7 @@ import os
 from collections import OrderedDict
 from ConfigParser import SafeConfigParser
 
-from siding import path
+from siding import path, profile
 from siding.addons.version import Version, VersionMatch
 
 ###############################################################################
@@ -235,7 +235,7 @@ class AddonInfo(object):
     path = None
     path_source = None
 
-    def __init__(self, name, filename=None):
+    def __init__(self, name, filename, filedata=None, source=None):
         """
         Initialize the AddonInfo instance for an add-on with the provided name.
         If a filename is provided, store it and attempt to load information
@@ -245,6 +245,10 @@ class AddonInfo(object):
         # Initialize some structures.
         self._ui = []
         self.data = {'name': name}
+        self.filedata = filedata
+        if filedata:
+            if 'name' in filedata:
+                del filedata['name']
 
         self.requires = OrderedDict()
         self.needed_by = []
@@ -252,19 +256,19 @@ class AddonInfo(object):
         # Now, store our information.
         self.name = name
 
-        # Do we have a file? If so, make sure it exists, store the info, and
-        # load it.
-        if filename:
-            print path._sources
-            print path.exists(filename)
-            if not path.exists(filename):
-                raise IOError(errno.ENOENT, 'No such file or directory: %r' %
-                              filename)
+        # Make sure our file exists.
+        if not path.exists(filename, source=source):
+            raise IOError(errno.ENOENT, 'No such file or directory: %r' %
+                                        filename)
 
-            # Store our path for later use.
-            self.path_source = path.source(filename)
-            self.path, self.file = os.path.split(filename)
-            self.load_information()
+        # Store our path for later use.
+        self.path_source = path.source(filename, source=source)
+        self._path, self.file = os.path.split(filename)
+
+        # Make a PathContext, then go ahead and load.
+        self.path = path.PathContext(self._path, self.path_source)
+
+        self.load_information()
 
     def __repr__(self):
         return '<%s(%r, version=%r)>' % (
@@ -272,6 +276,14 @@ class AddonInfo(object):
             self.data['name'],
             str(self.version)
             )
+
+    ##### Blacklisting ########################################################
+
+    @property
+    def is_blacklisted(self):
+        """ Whether or not the add-on is blacklisted. """
+        return bool(profile.get('siding/addons/blacklist/%s/%s' %
+                                (self._type_name, self.name)))
 
     ##### User Interface Helpers ##############################################
 
@@ -305,8 +317,7 @@ class AddonInfo(object):
     def load_information(self):
         """ Load the add-on's information from file. """
         parser = SafeConfigParser()
-        filename = path.join(self.path, self.file)
-        with path.open(filename, source=self.path_source) as file:
+        with self.path.open(self.file) as file:
             parser.readfp(file, self.file)
 
         # Read the core information.
@@ -337,6 +348,11 @@ class AddonInfo(object):
 
             # Load the value and set it as an attribute of self.
             setattr(self, key, key_type(parser.get('Core', key)))
+
+        # Split the inheritance.
+        if (hasattr(self, 'inherits') and self.inherits and
+                isinstance(self.inherits, basestring)):
+            self.inherits = [x.strip() for x in self.inherits.split(',')]
 
         # Now, read the requirements.
         if parser.has_section('Requires'):

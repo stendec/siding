@@ -26,9 +26,21 @@ has an easy-to-customize in-app update system.
 ###############################################################################
 
 from siding.addons.base import action, AddonInfo
-from siding.addons.manager import manager
+from siding.addons.manager import DependencyError, manager
 
 safe_mode = False
+
+###############################################################################
+# Shortcuts
+###############################################################################
+
+add_type = manager.add_type
+discover = manager.discover
+find = manager.find
+get = manager.get
+
+check_inheritance = manager.check_inheritance
+check_dependencies = manager.check_dependencies
 
 ###############################################################################
 # Exports
@@ -37,7 +49,10 @@ safe_mode = False
 __all__ = [
     manager,  # The All Powerful
 
+    add_type, discover, get, find,  # Manager Functions
+    check_dependencies, check_inheritance,
+
     action,  # Decorators
 
-    AddonInfo,  # Classes
+    AddonInfo, DependencyError,  # Classes
 ]

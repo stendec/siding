@@ -69,6 +69,7 @@ STYLE_KEYS = {
 ##### Storage #################################################################
 
 _current_style = None
+qss_preprocessor = None
 
 ###############################################################################
 # Internal Helper Functions
@@ -123,27 +124,62 @@ class StyleInfo(addons.AddonInfo):
     def is_enabled(self):
         return _current_style is self
 
+# Registration
+addons.add_type(
+    'style',
+    StyleInfo,
+    "{name}/style.ini",
+    ['styles'],
+    text="Styles",
+    icon='styles'
+)
+
 ###############################################################################
 # Style Application - Where the Magic Happens!
 ###############################################################################
 
-def _load_qss(name, style=None):
+def load_qss(name, style=None, use_inheritance=True, _always_return=True):
     if not style:
         style = _current_style
     if not style:
-        return ''
+        if _always_return:
+            return ''
+        return
 
-
-
-    style_path = path.join(style.path, name)
-    if not path.exists(style_path, source=style.path_source):
+    # Try finding our file.
+    if not style.path.exists(name):
+        if use_inheritance and style.inherits:
+            for parent in style.inherits:
+                result = load_qss(name, parent, _always_return=False)
+                if isinstance(result, basestring):
+                    return result
+        
         log.warning('Cannot find %r in style %r.' % (name, style.data['name']))
-        return ''
+        if _always_return:
+            return ''
+        return
 
-    with path.open(style_path, source=style.path_source) as f:
-        qss = f.read()
+    # We have a file. Read it.
+    with style.path.open(name) as f:
+        data = f.read()
 
-    return qss
+    log.debug('Begin loading Qt Style Sheet: %s' % name)
+    log.debug('---- Before ----')
+    log.debug(data)
+
+    # QSS Pre-processing
+    if qss_preprocessor:
+        try:
+            data = qss_preprocessor(name, data, style)
+        except Exception:
+            log.exception('Error pre-processing Qt Style Sheet %r for ' \
+                          'style %r.' % (name, style.data['name']))
+
+    log.debug('---- After ----')
+    log.debug(data)
+    log.debug('End loading Qt Style Sheet: %s' % name)
+
+    return data
 
 def _apply_style():
     """ Apply the current style to the application. """
@@ -167,7 +203,7 @@ def _apply_style():
     app.setStyle(style.ui if style.ui else profile.get('siding/widget-style'))
 
     # Load the main stylesheet.
-    app.setStyleSheet(_load_qss('application.qss'))
+    app.setStyleSheet(load_qss('application.qss'))
 
     # Restyle every styled widget.
     for ref in _managed_widgets.keys():
@@ -193,7 +229,7 @@ def _style_widget(ref):
             qss.append(style[5:])
             continue
 
-        qss.append(_load_qss(style))
+        qss.append(load_qss(style))
 
     # Now, apply the styles.
     log.debug('Applying new styles to widget %r.' % widget)
@@ -237,7 +273,7 @@ def disable_aero(widget):
         _aeroglass.remove(widget)
 
 def icon(name, extension=None, style=None, use_inheritance=True,
-         allow_theme=True):
+         allow_theme=True, _always_return=True):
     """
     Find an icon with the given ``name`` and ``extension`` and return a
     :class:`PySide.QtGui.QIcon` for that icon.
@@ -275,32 +311,35 @@ def icon(name, extension=None, style=None, use_inheritance=True,
     # Iteration powers, activate!
     for ext in extensions:
         filename = '%s.%s' % (name, ext)
-        icon_path = path.join(style.path, 'images', filename)
-        if path.exists(icon_path, source=style.path_source):
+        icon_path = path.join('images', filename)
+        if style.path.exists(icon_path):
             # We've got it, but what is it?
             if (not isinstance(style.path_source, basestring) or
                     style.path_source.startswith('py:')):
                 # pkg_resource! Do things the fun and interesting way.
-                with path.open(icon_path, source=style.path_source) as f:
+                with style.path.open(icon_path) as f:
                     pixmap = QPixmap()
                     pixmap.loadFromData(f.read())
                     return QIcon(pixmap)
 
             # Just a regular file. Open normally.
-            return QIcon(path.abspath(icon_path, source=style.path_source))
+            return QIcon(style.path.abspath(icon_path))
 
     # Still here? We didn't find our icon then. If we're inheriting, then call
     # icon again for the style we inherit from.
     if use_inheritance and style.inherits:
-        return icon(name, extension, style.inherits, use_inheritance,
-                    allow_theme)
+        for parent in style.inherits:
+            result = icon(name, extension, parent, True, False, False)
+            if result:
+                return result
 
     # For one last try, see if we can use the theme icons.
     if allow_theme and QIcon.hasThemeIcon(name):
         return QIcon.fromTheme(name)
 
     # We don't have an icon. Return a null QIcon.
-    return QIcon()
+    if _always_return:
+        return QIcon()
 
 def apply_stylesheet(widget, *paths):
     """
@@ -440,6 +479,9 @@ def activate_style(style):
     elif not isinstance(style, StyleInfo):
         raise TypeError("Can only activate StyleInfo instances!")
 
+    # Check our inheritance.
+    addons.check_inheritance(style)
+
     # Now that we have our style, activate it.
     _current_style = style
     _apply_style()
@@ -489,10 +531,19 @@ def initialize(args=None, **kwargs):
     ================  ============
     """
 
-    # Get the defaults.
+    # Get the default style and start our list.
     default_style = kwargs.get('default_style', 'default')
-    style = kwargs.get('style', profile.get('siding/style/current-style',
-                                            default_style))
+    styles = [default_style]
+
+    # Add the profile's current style to the list.
+    style = profile.get('siding/style/current-style')
+    if style:
+        styles.insert(0, style)
+
+    # Add the passed style to the list.
+    style = kwargs.get('style')
+    if style:
+        styles.insert(0, style)
 
     # Parse any options we've got.
     if args:
@@ -509,7 +560,8 @@ def initialize(args=None, **kwargs):
             addons.safe_mode = True
 
         if options.style:
-            style = options.style
+            # Add the CLI style to the list.
+            styles.insert(0, options.style)
 
     # Save the current widget style.
     widget_style = QApplication.instance().style().metaObject().className()
@@ -522,10 +574,13 @@ def initialize(args=None, **kwargs):
         log.info('Not loading a style due to safe-mode.')
         return
 
-    s = StyleInfo(style, 'styles/%s/style.ini' % style)
+    # Do it!
+    addons.discover('style')
 
-    for key in dir(s):
-        value = getattr(s, key)
-        if not getattr(value, '_is_action', False):
-            continue
-        print 'Action Detected: %s -- %s' % (key, value.text)
+    # Get the style.
+    for style in styles:
+        try:
+            activate_style(addons.get('style', style))
+            break
+        except KeyError:
+            log.error('No such style: %s' % style)

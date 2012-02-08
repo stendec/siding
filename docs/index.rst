@@ -64,12 +64,10 @@ Documentation
 
 Documentation is still being written.
 
- .. toctree::
-     :maxdepth: 2
+.. toctree::
+    :maxdepth: 2
 
-     guides/index
-
-..     examples/index
+    guides/index
 
 API
 ===
@@ -81,4 +79,5 @@ API
     api/path
     api/profile
     api/singleinstance
+    api/style
     api/version

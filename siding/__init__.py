@@ -31,6 +31,8 @@ from siding import addons, path, profile
 from siding import style, plugins
 from siding.singleinstance import QSingleApplication
 
+from siding import qss
+
 ###############################################################################
 # Exports
 ###############################################################################

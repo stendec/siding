@@ -29,3 +29,8 @@ Path Enumeration and Manipulation
 .. autofunction:: open
 .. autofunction:: source
 .. autofunction:: walk
+
+PathContext
+===========
+
+.. autoclass:: PathContext
