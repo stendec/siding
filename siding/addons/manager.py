@@ -275,7 +275,7 @@ class AddonManager(object):
 
     ##### Dependency and Inheritance Checking #################################
 
-    def check_dependencies(self, addon):
+    def check_dependencies(self, addon, _chain=tuple()):
         """
         Verify that the dependencies of the given addon are available and that
         their own dependencies are available, ensuring that it will be possible
@@ -285,8 +285,14 @@ class AddonManager(object):
         if not type in self._types:
             raise TypeError("Invalid add-on type %r." % addon.__class__)
 
+        # Update the chain.
+        new_chain = _chain + (addon.name,)
+
         # Iterate the requirements.
         for dname, match in addon.requires:
+            if dname in new_chain:
+                raise DependencyError('Dependency loop: %r' % new_chain)
+
             if dname == '__app__':
                 version = app_version()
             else:
@@ -332,7 +338,7 @@ class AddonManager(object):
             return
 
         # Update the chain.
-        new_chain = tuple(_chain) + (addon.name,)
+        new_chain = _chain + (addon.name,)
 
         # Iterate the inheritance list.
         for name in addon.inherits:

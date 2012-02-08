@@ -647,29 +647,46 @@ class PathContext(object):
         return normpath(name)
 
     def open(self, name, mode='rb'):
+        if os.path.isabs(name):
+            return open(name, mode)
         return open(join(self.path, name), mode, source=self._source)
 
     def source(self, name):
+        if os.path.isabs(name):
+            return name
         return source(name, source=self._source)
 
     def abspath(self, name, creating=False):
+        if os.path.isabs(name):
+            return name
         return abspath(join(self.path, name), creating, source=self._source)
 
     def listdir(self, name):
-        return listdir(join(self.path, name), source=self._source)
+        if not os.path.isabs(name):
+            name = join(self.path, name)
+        return listdir(name, source=self._source)
 
     def exists(self, name):
+        if os.path.isabs(name):
+            return os.path.exists(name)
         return exists(join(self.path, name), source=self._source)
 
     def isdir(self, name):
+        if os.path.isabs(name):
+            return os.path.isdir(name)
         return isdir(join(self.path, name), source=self._source)
 
     def isfile(self, name):
+        if os.path.isabs(name):
+            return os.path.isfile(name)
         return isfile(join(self.path, name), source=self._source)
 
     def islink(self, name):
+        if os.path.iabs(name):
+            return os.path.islink(name)
         return islink(join(self.path, name), self._source)
 
     def walk(self,top, topdown=True, onerror=None, followlinks=False):
-        return walk(join(self.path, top), topdown, onerror, followlinks,
-                    source=self._source)
+        if not os.path.isabs(top):
+            top = join(self.path, top)
+        return walk(top, topdown, onerror, followlinks, source=self._source)

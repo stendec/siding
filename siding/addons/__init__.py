@@ -27,6 +27,7 @@ has an easy-to-customize in-app update system.
 
 from siding.addons.base import action, AddonInfo
 from siding.addons.manager import DependencyError, manager
+from siding.addons.version import Version, VersionMatch
 
 safe_mode = False
 
@@ -43,6 +44,15 @@ check_inheritance = manager.check_inheritance
 check_dependencies = manager.check_dependencies
 
 ###############################################################################
+# The UI Helper
+###############################################################################
+
+def show():
+    """ Show the Add-on Manager's user interface. """
+    from siding.addons import ui
+    ui.show()
+
+###############################################################################
 # Exports
 ###############################################################################
 
@@ -55,4 +65,10 @@ __all__ = [
     action,  # Decorators
 
     AddonInfo, DependencyError,  # Classes
+    Version, VersionMatch,
+
+    ##### UI Stuff ############################################################
+
+    show,
+
 ]

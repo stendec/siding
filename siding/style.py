@@ -569,18 +569,20 @@ def initialize(args=None, **kwargs):
     if widget_style:
         profile.set('siding/style/widget-style', widget_style)
 
+    # Discover our styles.
+    addons.discover('style')
+
     # If safe-mode is enabled, just quit now.
     if addons.safe_mode:
         log.info('Not loading a style due to safe-mode.')
         return
-
-    # Do it!
-    addons.discover('style')
 
     # Get the style.
     for style in styles:
         try:
             activate_style(addons.get('style', style))
             break
+        except (IOError, ValueError), err:
+            log.error('Error loading style %r: %s' % (style, err))
         except KeyError:
             log.error('No such style: %s' % style)
